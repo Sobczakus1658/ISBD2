@@ -22,7 +22,7 @@ std::vector<Batch> createSampleBatches(){
     ageCol.column = {67, 68, 69};
     StringColumn nameCol; 
     nameCol.name = "imie"; 
-    nameCol.column = {"Zbyszek", "Halina", "Onufry"};
+    nameCol.column = {"Zbyszek", "Zbyszek", "Zbyszek"};
     a.intColumns.push_back(std::move(idCol));
     a.intColumns.push_back(std::move(ageCol));
     a.stringColumns.push_back(std::move(nameCol));
@@ -35,7 +35,7 @@ std::vector<Batch> createSampleBatches(){
     population.column = {24892, 51234, 1236, 712};
     StringColumn cityCol;
     cityCol.name = "miasto"; 
-    cityCol.column = {"Skierniewice", "Sochaczew", "Nowa Sucha", "Kozlow Biskupi"};
+    cityCol.column = {"Skierniewicwwwwwwwwwwwwe", "Sochacwwwwwwwwwwwwzew", "Nowaffffffffffffffffff Sucha", "Kozlow Biwwwwwwwwwwwwwwskupi"};
     StringColumn wies;
     wies.name = "czy wies"; 
     wies.column = {"nie", "nie", "tak", "tak"};
@@ -103,11 +103,11 @@ void calculateStatistics(std::vector<Batch> &batches) {
 }
 
 int main(){
-    const std::string& filepath = "/home/sobczakus/implementacja/git/ISBD2/batches/batches.bin";
+    const std::string& filepath = "/home/sobczakus/implementacja/ISBD2/batches/batches.bin";
 
     std::vector<Batch> batches = std::move(createSampleBatches());
     serializator(batches, filepath);
     std::vector<Batch> deserializated_batches = std::move(deserializator(filepath));
-    calculateStatistics(deserializated_batches);
+    // calculateStatistics(deserializated_batches);
     validateBatches(batches, deserializated_batches);
 }

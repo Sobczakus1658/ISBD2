@@ -127,7 +127,7 @@ void encodeMetaDataInt(std::ofstream& out, IntColumn& column){
 }
 
 void encodeIntColumns(std::ofstream& out, std::vector<IntColumn>& columns){
-    for(auto intColumn : columns) {
+    for(auto &intColumn : columns) {
         encodeMetaDataInt(out, intColumn);
     }
 }

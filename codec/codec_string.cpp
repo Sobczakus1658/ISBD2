@@ -31,7 +31,7 @@ StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {
     return out;
 }
 
-void decodeStringColumn(std::ifstream& in, std::vector<StringColumn>& columns) {
+StringColumn decodeStringColumn(std::ifstream& in) {
     EncodeStringColumn column;
 
     std::string name;
@@ -55,7 +55,7 @@ void decodeStringColumn(std::ifstream& in, std::vector<StringColumn>& columns) {
         in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_size);
     }
 
-    columns.push_back(std::move(decodeSingleStringColumn(column)));
+    return decodeSingleStringColumn(column);
 }
 
 EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
@@ -118,12 +118,12 @@ void encodeStringColumn(std::ofstream& out, StringColumn& column){
 
 void decodeStringColumns(std::ifstream& in, std::vector<StringColumn>& columns, uint32_t length) {
     for (uint32_t j = 0; j < length; j++) {
-        decodeStringColumn(in, columns);
+        columns.push_back(std::move(decodeStringColumn(in)));
     }
 }
 
 void encodeStringColumns(std::ofstream& out, std::vector<StringColumn>& columns) {
-    for (auto column : columns) {
+    for (auto &column : columns) {
         encodeStringColumn(out, column);
     }
 }
