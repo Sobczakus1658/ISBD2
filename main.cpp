@@ -27,35 +27,67 @@ std::vector<Batch> createSampleBatches(){
     a.intColumns.push_back(std::move(ageCol));
     a.stringColumns.push_back(std::move(nameCol));
     batches.push_back(std::move(a));
-    
+
     Batch b;
-    b.num_rows = 4;
-    IntColumn population; 
-    population.name = "populacja"; 
-    population.column = {24892, 51234, 1236, 712};
-    StringColumn cityCol;
-    cityCol.name = "miasto"; 
-    cityCol.column = {"Skierniewicwwwwwwwwwwwwe", "Sochacwwwwwwwwwwwwzew", "Nowaffffffffffffffffff Sucha", "Kozlow Biwwwwwwwwwwwwwwskupi"};
-    StringColumn wies;
-    wies.name = "czy wies"; 
-    wies.column = {"nie", "nie", "tak", "tak"};
-    b.intColumns.push_back(std::move(population));
-    b.stringColumns.push_back(std::move(cityCol));
-    b.stringColumns.push_back(std::move(wies));
+    b.num_rows = 2;
+    // IntColumn idCol;
+    idCol.name = "id"; 
+    idCol.column = {1, 2};
+    // IntColumn ageCol;
+    ageCol.name = "wiek"; 
+    ageCol.column = {67, 68};
+    // StringColumn nameCol; 
+    nameCol.name = "imie"; 
+    nameCol.column = {"Zbyszek", "Zbyszek"};
+    b.intColumns.push_back(std::move(idCol));
+    b.intColumns.push_back(std::move(ageCol));
+    b.stringColumns.push_back(std::move(nameCol));
     batches.push_back(std::move(b));
-    
 
     Batch c;
-    c.num_rows = 2;
-    IntColumn feetSize; 
-    feetSize.name = "rozmiar stopy"; 
-    feetSize.column = {44, 44};
-    StringColumn colorShoe;
-    colorShoe.name = "kolor buta"; 
-    colorShoe.column = {"zolty", "zielony"};
-    c.intColumns.push_back(std::move(feetSize));
-    c.stringColumns.push_back(std::move(colorShoe));
+    c.num_rows = 4;
+    // IntColumn idCol;
+    idCol.name = "id"; 
+    idCol.column = {1, 2, 3, 5};
+    // IntColumn ageCol;
+    ageCol.name = "wiek"; 
+    ageCol.column = {67, 68, 69, 70};
+    // StringColumn nameCol; 
+    nameCol.name = "imie"; 
+    nameCol.column = {"Zbyszek", "Zbyszek", "Zbyszek", "olsza"};
+    c.intColumns.push_back(std::move(idCol));
+    c.intColumns.push_back(std::move(ageCol));
+    c.stringColumns.push_back(std::move(nameCol));
     batches.push_back(std::move(c));
+    
+    // Batch b;
+    // b.num_rows = 4;
+    // IntColumn population; 
+    // population.name = "populacja"; 
+    // population.column = {24892, 51234, 1236, 712};
+    // StringColumn cityCol;
+    // cityCol.name = "miasto"; 
+    // cityCol.column = {"Skierniewicwwwwwwwwwwwwe", "Sochacwwwwwwwwwwwwzew", "Nowaffffffffffffffffff Sucha", "Kozlow Biwwwwwwwwwwwwwwskupi"};
+    // StringColumn wies;
+    // wies.name = "czy wies"; 
+    // wies.column = {"nie", "nie", "tak", "tak"};
+    // b.intColumns.push_back(std::move(population));
+    // b.stringColumns.push_back(std::move(cityCol));
+    // b.stringColumns.push_back(std::move(wies));
+    // batches.push_back(std::move(b));
+    
+
+    // Batch c;
+    // c.num_rows = 2;
+    // IntColumn feetSize; 
+    // feetSize.name = "rozmiar stopy"; 
+    // feetSize.column = {44, 44};
+    // StringColumn colorShoe;
+    // colorShoe.name = "kolor buta"; 
+    // colorShoe.column = {"zolty", "zielony"};
+    // c.intColumns.push_back(std::move(feetSize));
+    // c.stringColumns.push_back(std::move(colorShoe));
+    // batches.push_back(std::move(c));
 
     return batches;
 }
@@ -103,11 +135,16 @@ void calculateStatistics(std::vector<Batch> &batches) {
 }
 
 int main(){
-    const std::string& filepath = "/home/sobczakus/implementacja/ISBD2/batches/batches.bin";
+    std::string folderPath = "/home/sobczakus/implementacja/ISBD2/batches/";
+    std::string filePath = folderPath + ".part000";
 
     std::vector<Batch> batches = std::move(createSampleBatches());
-    serializator(batches, filepath);
-    std::vector<Batch> deserializated_batches = std::move(deserializator(filepath));
+    serializator(batches, folderPath);
+    std::vector<Batch> deserializated_batches = std::move(deserializator(filePath));
     // calculateStatistics(deserializated_batches);
     validateBatches(batches, deserializated_batches);
+    std::vector<Batch> bats = readColumn(filePath, "imie");
+    for(auto &b : bats) {
+        printBatch(b);
+    }
 }

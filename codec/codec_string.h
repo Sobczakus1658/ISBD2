@@ -10,4 +10,8 @@ inline constexpr int compresion_level = 3;
 
 void encodeStringColumns(std::ofstream& out, std::vector<StringColumn>& columns);
 
+uint64_t encodeStringColumn(std::ofstream& out, StringColumn& column);
+
 void decodeStringColumns(std::ifstream& in, std::vector<StringColumn>& columns, uint32_t length); 
+
+std::pair<uint64_t, StringColumn> decodeStringColumnBlock(std::ifstream& in);

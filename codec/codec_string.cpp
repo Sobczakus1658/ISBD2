@@ -6,6 +6,7 @@ struct EncodeStringColumn {
     std::vector<uint8_t> compressed_data;
     uint32_t uncompressed_size;  
     uint32_t compressed_size;
+    uint64_t offset;
 };
 
 StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {
@@ -33,6 +34,8 @@ StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {
 
 StringColumn decodeStringColumn(std::ifstream& in) {
     EncodeStringColumn column;
+    uint64_t prev_ptr = 0;
+    in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
 
     std::string name;
     uint32_t name_len;
@@ -58,6 +61,36 @@ StringColumn decodeStringColumn(std::ifstream& in) {
     return decodeSingleStringColumn(column);
 }
 
+std::pair<uint64_t, StringColumn> decodeStringColumnBlock(std::ifstream& in) {
+    EncodeStringColumn column;
+    uint64_t prev_ptr = 0;
+    in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
+
+    std::string name;
+    uint32_t name_len;
+    uint32_t uncompressed_size;
+    uint32_t compressed_size;
+
+    in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len));
+    name.resize(name_len);
+    if (name_len > 0) {
+        in.read(&name[0], name_len);
+    }
+    column.name = std::move(name);
+
+    in.read(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
+    in.read(reinterpret_cast<char*>(&compressed_size), sizeof(compressed_size));
+    column.uncompressed_size = uncompressed_size;
+    column.compressed_size = compressed_size;
+    column.compressed_data.resize(static_cast<size_t>(compressed_size));
+    if (compressed_size > 0) {
+        in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_size);
+    }
+
+    StringColumn out = decodeSingleStringColumn(column);
+    return {prev_ptr, std::move(out)};
+}
+
 EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
     auto* out = new EncodeStringColumn();
 
@@ -73,7 +106,7 @@ EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
         blob.push_back('\0');
     }
 
-    out->name = std::move(column.name);
+    out->name = column.name;
 
     size_t uncompressed_size = blob.size();
     out->uncompressed_size = static_cast<uint32_t>(uncompressed_size);
@@ -101,19 +134,31 @@ EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
     return out;
 }
 
-void encodeStringColumn(std::ofstream& out, StringColumn& column){
+uint64_t encodeStringColumn(std::ofstream& out, StringColumn& column){
     EncodeStringColumn* col = encodeSingleStringColumn(column);
     uint32_t len = (*col).name.size();
     uint32_t uncompressed_size = (*col).uncompressed_size;
     uint32_t compressed_size = (*col).compressed_size;
 
-    out.write((char*)&len, sizeof(len));
-    out.write((char*)(*col).name.data(), len);
+    out.write(reinterpret_cast<char*>(&len), sizeof(len));
+    if (len > 0) out.write((*col).name.data(), len);
 
-    out.write((char*)&uncompressed_size, sizeof(uncompressed_size));
-    out.write((char*)&compressed_size , sizeof(compressed_size));
+    out.write(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
+    out.write(reinterpret_cast<char*>(&compressed_size) , sizeof(compressed_size));
 
-    out.write((char*)(*col).compressed_data.data(), compressed_size);
+    if (compressed_size > 0) {
+        out.write(reinterpret_cast<char*>((*col).compressed_data.data()), compressed_size);
+    }
+
+    uint64_t total = 0;
+    total += sizeof(len);
+    total += static_cast<uint64_t>(len);
+    total += sizeof(uncompressed_size);
+    total += sizeof(compressed_size);
+    total += static_cast<uint64_t>(compressed_size);
+
+    delete col;
+    return total;
 }
 
 void decodeStringColumns(std::ifstream& in, std::vector<StringColumn>& columns, uint32_t length) {
