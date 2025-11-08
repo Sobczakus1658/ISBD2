@@ -12,7 +12,7 @@ void checkIntColumn(IntColumn& first, IntColumn& second){
     }
 
     if (first.column != second.column) {
-        std::cerr<<"Column " << first.name << " has different values \n";
+        std::cerr << "Column " << first.name << " has different values\n";
     }
 }
 
@@ -26,7 +26,7 @@ void checkStringColumn(StringColumn& first, StringColumn& second){
     }
 
     if (first.column != second.column) {
-        std::cerr<<"Column " << first.name << " has different values \n";
+        std::cerr << "Column " << first.name << " has different values\n";
     }
 }
 

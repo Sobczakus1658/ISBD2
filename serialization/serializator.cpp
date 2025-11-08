@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <algorithm>
 
+using namespace std;
+
 
 static std::string nextFilePath(const std::string& folderPath, uint32_t counter){
     char buf[512];
@@ -58,7 +60,7 @@ static void clearMap(std::unordered_map<std::string, ColumnInfo> &map) {
     }
 }
 
-void serializator(std::vector<Batch> &batches, const std::string& folderPath) {
+void serializator(std::vector<Batch> &batches, const std::string& folderPath, uint64_t PART_LIMIT) {
     std::unordered_map<std::string, ColumnInfo> last_offset;
     if (!batches.empty()) last_offset = initMap(batches[0]);
     else last_offset = initMap(Batch());

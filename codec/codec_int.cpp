@@ -1,5 +1,6 @@
 #include "codec_int.h"
-#include <algorithm> 
+#include <algorithm>
+#include <iostream>
 
 struct EncodeIntColumn {
     std::string name;
@@ -8,13 +9,12 @@ struct EncodeIntColumn {
 };
 
 void variableLengthEncoding(std::vector<uint8_t> & compressed_data, std::vector<uint64_t>& column) {
-    bool flag = true;
     for (auto value : column) {
-        flag = true;
-        while(flag) {
-            uint8_t byte = value & 0x7F;  
+        bool flag = true;
+        while (flag) {
+            uint8_t byte = static_cast<uint8_t>(value & 0x7F);
             value >>= 7;
-            if (byte == 0) {
+            if (value == 0) {
                 compressed_data.push_back(byte);
                 flag = false;
             } else {
@@ -108,7 +108,6 @@ void decodeIntColumn(std::ifstream& in, std::vector<IntColumn>& columns) {
     if (compressed_bits_length > 0) {
         in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_bits_length);
     }
-
     columns.push_back(std::move(decodeSingleIntColumn(column)));
 }
 
