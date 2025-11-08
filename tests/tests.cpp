@@ -13,7 +13,9 @@
 
 static constexpr uint64_t PART_LIMIT = 3500ULL * 1024ULL * 1024ULL;
 static constexpr uint64_t SHORTER_LIMIT = 3500ULL * 1024ULL;
-static const std::string base = "/home/sobczakus/implementacja/ISBD2/batches/";
+namespace fs = std::filesystem;
+static const std::string base =  fs::current_path() / "batches/";
+// "/home/sobczakus/implementacja/ISBD2/batches/";
 
 std::vector<Batch> createBatchesForColumnTest(){
     std::vector<Batch> batches;
@@ -220,7 +222,6 @@ void someFilesTest(){
     serializator(batches, folderPath, SHORTER_LIMIT);
     std::cout<< "Seralization finished \n";
 
-    namespace fs = std::filesystem;
     fs::path dir = fs::path(folderPath).parent_path();
     std::string base = fs::path(folderPath).filename().string();
     std::string prefix = base + ".part";
@@ -258,7 +259,7 @@ void someFilesTest(){
     }
 
     std::cout << "Found " << fileCount << " part files with valid file magic\n";
-    std::cout<< "Column Test Passed \n \n";
+    std::cout<< "Some files Test Passed \n \n";
 }
 
 void simpleTest(){
@@ -274,7 +275,7 @@ void simpleTest(){
     std::cout<<"Batches before serialization and after deserialization are the same \n";
     std::cout<<"There are expected statistics \n";
     calculateStatistics(deserializated_batches);
-    std::cout<< "Column Test Passed \n \n";
+    std::cout<< "Simple Test Passed \n \n";
 }
 
 void bigTest(){
@@ -293,7 +294,7 @@ void bigTest(){
 
     std::vector<Batch> deserializated_batches = std::move(deserializator(filePath));
     validateBatches(batches, deserializated_batches);
-    std::cout<< "Column Test Passed \n \n";
+    std::cout<< "Big Test Passed \n \n";
 }
 
 void clearAfterTests() {
