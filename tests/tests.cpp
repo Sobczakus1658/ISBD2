@@ -15,7 +15,6 @@ static constexpr uint64_t PART_LIMIT = 3500ULL * 1024ULL * 1024ULL;
 static constexpr uint64_t SHORTER_LIMIT = 3500ULL * 1024ULL;
 namespace fs = std::filesystem;
 static const std::string base =  fs::current_path() / "batches/";
-// "/home/sobczakus/implementacja/ISBD2/batches/";
 
 std::vector<Batch> createBatchesForColumnTest(){
     std::vector<Batch> batches;
