@@ -1,6 +1,5 @@
 #include "../types.h"
-#include <string>
 
-std::vector<Batch> deserializator(const std::string& filepath);
+vector<Batch> deserializator(const string& filepath);
 
-std::vector<Batch> readColumn(const std::string& filepath, std::string column);
+vector<Batch> readColumn(const string& filepath, string column);

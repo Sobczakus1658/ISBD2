@@ -9,11 +9,11 @@ void calculateMean(IntColumn& column){
         sum += el;
     }
     double mean = static_cast<double>(sum) / static_cast<double>(column.column.size());
-    std::cout << "Mean for column " << column.name << " is " << mean << "\n";
+    cout << "Mean for column " << column.name << " is " << mean << "\n";
 }
 
 void calculateSum(StringColumn& column) {
-    std::unordered_map<char, int> ascii_count;
+    unordered_map<char, int> ascii_count;
 
     for (const auto &s : column.column) {
         for (unsigned char uc : s) {
@@ -22,19 +22,19 @@ void calculateSum(StringColumn& column) {
         }
     }
 
-    std::cout << "Character frequency analysis for column " << column.name << " \n";
+    cout << "Character frequency analysis for column " << column.name << " \n";
     for (const auto &kv : ascii_count) {
         char ch = kv.first;
         int count = kv.second;
         if (ch == '\n') {
-            std::cout << "'\\n' -> " << count << "\n";
+            cout << "'\\n' -> " << count << "\n";
         } else {
-            std::cout << "'" << ch << "'" << "-> " << count << "\n";
+            cout << "'" << ch << "'" << "-> " << count << "\n";
         }
     }
 }
 
-void calculateStatistics(std::vector<Batch> &batches) {
+void calculateStatistics(vector<Batch> &batches) {
     for (auto &batch : batches) {
         for(auto &column : batch.intColumns) {
             calculateMean(column);

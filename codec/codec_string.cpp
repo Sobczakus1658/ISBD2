@@ -2,8 +2,8 @@
 #include <zstd.h>
 
 struct EncodeStringColumn {
-    std::string name;
-    std::vector<uint8_t> compressed_data;
+    string name;
+    vector<uint8_t> compressed_data;
     uint32_t uncompressed_size;  
     uint32_t compressed_size;
     uint64_t offset;
@@ -12,9 +12,9 @@ struct EncodeStringColumn {
 StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {
 
     StringColumn out;
-    out.name = std::move(column.name);
+    out.name = move(column.name);
 
-    std::string decompressed(column.uncompressed_size, '\0');
+    string decompressed(column.uncompressed_size, '\0');
     ZSTD_decompress(
         decompressed.data(),
         column.uncompressed_size,
@@ -32,12 +32,12 @@ StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {
     return out;
 }
 
-StringColumn decodeStringColumn(std::ifstream& in) {
+StringColumn decodeStringColumn(ifstream& in) {
     EncodeStringColumn column;
     uint64_t prev_ptr = 0;
     in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
 
-    std::string name;
+    string name;
     uint32_t name_len;
     uint32_t uncompressed_size;
     uint32_t compressed_size;
@@ -47,7 +47,7 @@ StringColumn decodeStringColumn(std::ifstream& in) {
     if (name_len > 0) {
         in.read(&name[0], name_len);
     }
-    column.name = std::move(name);
+    column.name = move(name);
 
     in.read(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
     in.read(reinterpret_cast<char*>(&compressed_size), sizeof(compressed_size));
@@ -61,12 +61,12 @@ StringColumn decodeStringColumn(std::ifstream& in) {
     return decodeSingleStringColumn(column);
 }
 
-std::pair<uint64_t, StringColumn> decodeStringColumnBlock(std::ifstream& in) {
+pair<uint64_t, StringColumn> decodeStringColumnBlock(ifstream& in) {
     EncodeStringColumn column;
     uint64_t prev_ptr = 0;
     in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
 
-    std::string name;
+    string name;
     uint32_t name_len;
     uint32_t uncompressed_size;
     uint32_t compressed_size;
@@ -76,7 +76,7 @@ std::pair<uint64_t, StringColumn> decodeStringColumnBlock(std::ifstream& in) {
     if (name_len > 0) {
         in.read(&name[0], name_len);
     }
-    column.name = std::move(name);
+    column.name = move(name);
 
     in.read(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
     in.read(reinterpret_cast<char*>(&compressed_size), sizeof(compressed_size));
@@ -88,10 +88,10 @@ std::pair<uint64_t, StringColumn> decodeStringColumnBlock(std::ifstream& in) {
     }
 
     StringColumn out = decodeSingleStringColumn(column);
-    return {prev_ptr, std::move(out)};
+    return {prev_ptr, move(out)};
 }
 
-EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
+EncodeStringColumn* compressStringColumn(StringColumn& column) {
     auto* out = new EncodeStringColumn();
 
     size_t total_size = 0;
@@ -99,7 +99,7 @@ EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
         total_size += s.size() + 1; 
     }
 
-    std::string blob;
+    string blob;
     blob.reserve(total_size);
     for (const auto &val : column.column) {
         blob.append(val);
@@ -123,7 +123,7 @@ EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
     );
 
     if (ZSTD_isError(compressed_size)) {
-        std::cerr << "ZSTD compression error: " << ZSTD_getErrorName(compressed_size) << "\n";
+        cerr << "ZSTD compression error: " << ZSTD_getErrorName(compressed_size) << "\n";
         delete out;
         return nullptr;
     }
@@ -134,8 +134,8 @@ EncodeStringColumn* encodeSingleStringColumn(StringColumn& column) {
     return out;
 }
 
-uint64_t encodeStringColumn(std::ofstream& out, StringColumn& column){
-    EncodeStringColumn* col = encodeSingleStringColumn(column);
+uint64_t encodeSingleStringColumn(ofstream& out, StringColumn& column){
+    EncodeStringColumn* col = compressStringColumn(column);
     uint32_t len = (*col).name.size();
     uint32_t uncompressed_size = (*col).uncompressed_size;
     uint32_t compressed_size = (*col).compressed_size;
@@ -161,14 +161,14 @@ uint64_t encodeStringColumn(std::ofstream& out, StringColumn& column){
     return total;
 }
 
-void decodeStringColumns(std::ifstream& in, std::vector<StringColumn>& columns, uint32_t length) {
+void decodeStringColumns(ifstream& in, vector<StringColumn>& columns, uint32_t length) {
     for (uint32_t j = 0; j < length; j++) {
-        columns.push_back(std::move(decodeStringColumn(in)));
+        columns.push_back(move(decodeStringColumn(in)));
     }
 }
 
-void encodeStringColumns(std::ofstream& out, std::vector<StringColumn>& columns) {
-    for (auto &column : columns) {
-        encodeStringColumn(out, column);
-    }
-}
+// void encodeStringColumns(ofstream& out, vector<StringColumn>& columns) {
+//     for (auto &column : columns) {
+//         encodeStringColumn(out, column);
+//     }
+// }

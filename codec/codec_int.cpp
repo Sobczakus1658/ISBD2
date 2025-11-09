@@ -3,12 +3,12 @@
 #include <iostream>
 
 struct EncodeIntColumn {
-    std::string name;
-    std::vector<uint8_t> compressed_data;
+    string name;
+    vector<uint8_t> compressed_data;
     uint64_t delta_base;
 };
 
-void variableLengthEncoding(std::vector<uint8_t> & compressed_data, std::vector<uint64_t>& column) {
+void variableLengthEncoding(vector<uint8_t> & compressed_data, vector<uint64_t>& column) {
     for (auto value : column) {
         bool flag = true;
         while (flag) {
@@ -25,7 +25,7 @@ void variableLengthEncoding(std::vector<uint8_t> & compressed_data, std::vector<
     }
 }
 
-void variableLengthDecoding(std::vector<uint8_t> & compressed_data, std::vector<uint64_t>& column) {
+void variableLengthDecoding(vector<uint8_t> & compressed_data, vector<uint64_t>& column) {
     uint64_t value = 0;
     uint8_t shift = 0;
 
@@ -41,7 +41,7 @@ void variableLengthDecoding(std::vector<uint8_t> & compressed_data, std::vector<
     }
 }
 
-void deltaDecoding(std::vector<uint64_t>& column, uint64_t base) {
+void deltaDecoding(vector<uint64_t>& column, uint64_t base) {
     if (column.empty()) return;
 
     uint64_t size =column.size();
@@ -50,10 +50,10 @@ void deltaDecoding(std::vector<uint64_t>& column, uint64_t base) {
     }
 }
 
-std::vector<uint64_t> deltaEncoding(const std::vector<uint64_t>& column, uint64_t base) {
+vector<uint64_t> deltaEncoding(const vector<uint64_t>& column, uint64_t base) {
     if (column.empty()) return {};
 
-    std::vector<uint64_t> out = column;
+    vector<uint64_t> out = column;
     for (size_t i = 1; i < out.size(); ++i) {
         out[i] -= base;
     }
@@ -68,9 +68,9 @@ EncodeIntColumn encodeSingleIntColumn(IntColumn& column) {
         out.compressed_data.clear();
         return out;
     }
-    auto min_it = std::min_element(column.column.begin(), column.column.end());
+    auto min_it = min_element(column.column.begin(), column.column.end());
     out.delta_base = *min_it;
-    std::vector<uint64_t> modified = deltaEncoding(column.column, out.delta_base);
+    vector<uint64_t> modified = deltaEncoding(column.column, out.delta_base);
     variableLengthEncoding(out.compressed_data, modified);
     return out;
 }
@@ -83,12 +83,12 @@ IntColumn decodeSingleIntColumn(EncodeIntColumn& column) {
     return out;
 }
 
-void decodeIntColumn(std::ifstream& in, std::vector<IntColumn>& columns) {
+void decodeIntColumn(ifstream& in, vector<IntColumn>& columns) {
     EncodeIntColumn column;
     uint64_t prev_ptr = 0;
     in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
 
-    std::string name;
+    string name;
     uint32_t name_len;
     uint32_t compressed_bits_length;
     uint64_t delta_base;
@@ -98,7 +98,7 @@ void decodeIntColumn(std::ifstream& in, std::vector<IntColumn>& columns) {
     if (name_len > 0) {
         in.read(&name[0], name_len);
     }
-    column.name = std::move(name);
+    column.name = move(name);
 
     in.read(reinterpret_cast<char*>(&delta_base), sizeof(delta_base));
     column.delta_base = delta_base;
@@ -108,15 +108,15 @@ void decodeIntColumn(std::ifstream& in, std::vector<IntColumn>& columns) {
     if (compressed_bits_length > 0) {
         in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_bits_length);
     }
-    columns.push_back(std::move(decodeSingleIntColumn(column)));
+    columns.push_back(move(decodeSingleIntColumn(column)));
 }
 
-std::pair<uint64_t, IntColumn> decodeIntColumnBlock(std::ifstream& in) {
+pair<uint64_t, IntColumn> decodeIntColumnBlock(ifstream& in) {
     EncodeIntColumn column;
     uint64_t prev_ptr = 0;
     in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
 
-    std::string name;
+    string name;
     uint32_t name_len;
     uint32_t compressed_bits_length;
     uint64_t delta_base;
@@ -126,7 +126,7 @@ std::pair<uint64_t, IntColumn> decodeIntColumnBlock(std::ifstream& in) {
     if (name_len > 0) {
         in.read(&name[0], name_len);
     }
-    column.name = std::move(name);
+    column.name = move(name);
 
     in.read(reinterpret_cast<char*>(&delta_base), sizeof(delta_base));
     column.delta_base = delta_base;
@@ -137,11 +137,11 @@ std::pair<uint64_t, IntColumn> decodeIntColumnBlock(std::ifstream& in) {
         in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_bits_length);
     }
 
-    IntColumn out = std::move(decodeSingleIntColumn(column));
-    return {prev_ptr, std::move(out)};
+    IntColumn out = move(decodeSingleIntColumn(column));
+    return {prev_ptr, move(out)};
 }
 
-uint64_t encodeMetaDataInt(std::ofstream& out, IntColumn& column){
+uint64_t encodeSingleIntColumn(ofstream& out, IntColumn& column){
     EncodeIntColumn col = encodeSingleIntColumn(column);
     uint32_t len = col.name.size();
     uint32_t compressed_bits_length = col.compressed_data.size();
@@ -166,15 +166,8 @@ uint64_t encodeMetaDataInt(std::ofstream& out, IntColumn& column){
     return total;
 }
 
-uint64_t encodeIntColumns(std::ofstream& out, std::vector<IntColumn>& columns, std::unordered_map<std::string, uint64_t>& map){
-    uint64_t totalSize = 0;
-    for(auto &intColumn : columns) {
-        totalSize += encodeMetaDataInt(out, intColumn);
-    }
-    return totalSize;
-}
 
-void decodeIntColumns(std::ifstream& in, std::vector<IntColumn>& columns, uint32_t length) {
+void decodeIntColumns(ifstream& in, vector<IntColumn>& columns, uint32_t length) {
     for (uint32_t j = 0; j < length; j++) {
         decodeIntColumn(in, columns);
     }

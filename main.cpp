@@ -2,8 +2,6 @@
 #include <fstream>
 #include <unordered_map>
 
-using namespace std;
-
 extern void simpleTest();
 extern void columnTest();
 extern void someFilesTest();

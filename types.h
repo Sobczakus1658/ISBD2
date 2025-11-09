@@ -14,21 +14,21 @@ static constexpr uint8_t STRING  = 1;
 
 using namespace std;
 
-using ColumnInfo = std::pair<uint64_t, uint8_t>;
+using ColumnInfo = pair<uint64_t, uint8_t>;
 
 struct IntColumn {
-    std::string name;
-    std::vector<std::uint64_t> column;
+    string name;
+    vector<uint64_t> column;
 };
 
 struct StringColumn {
-    std::string name;
-    std::vector<std::string> column;
+    string name;
+    vector<string> column;
 };
 
 struct Batch {
-    std::vector<IntColumn> intColumns;
-    std::vector<StringColumn> stringColumns;
-    std::size_t num_rows;
+    vector<IntColumn> intColumns;
+    vector<StringColumn> stringColumns;
+    size_t num_rows;
 };
 
