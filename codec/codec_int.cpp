@@ -5,34 +5,32 @@
 struct EncodeIntColumn {
     string name;
     vector<uint8_t> compressed_data;
-    uint64_t delta_base;
+    int64_t delta_base;
 };
 
-void variableLengthEncoding(vector<uint8_t> & compressed_data, vector<uint64_t>& column) {
-    for (auto value : column) {
-        bool flag = true;
-        while (flag) {
+static void variableLengthEncoding(vector<uint8_t> &compressed_data, const vector<uint64_t> &column) {
+    for (uint64_t v : column) {
+        uint64_t value = v;
+        while (true) {
             uint8_t byte = static_cast<uint8_t>(value & 0x7F);
             value >>= 7;
             if (value == 0) {
                 compressed_data.push_back(byte);
-                flag = false;
+                break;
             } else {
-                byte |= 0x80;
-                compressed_data.push_back(byte);
+                compressed_data.push_back(byte | 0x80);
             }
         }
     }
 }
 
-void variableLengthDecoding(vector<uint8_t> & compressed_data, vector<uint64_t>& column) {
+static void variableLengthDecoding(const vector<uint8_t> &compressed_data, vector<uint64_t> &out) {
     uint64_t value = 0;
-    uint8_t shift = 0;
-
+    unsigned shift = 0;
     for (uint8_t chunk : compressed_data) {
         value |= (uint64_t)(chunk & 0x7F) << shift;
         if ((chunk & 0x80) == 0) {
-            column.push_back(value);
+            out.push_back(value);
             value = 0;
             shift = 0;
         } else {
@@ -41,21 +39,21 @@ void variableLengthDecoding(vector<uint8_t> & compressed_data, vector<uint64_t>&
     }
 }
 
-void deltaDecoding(vector<uint64_t>& column, uint64_t base) {
-    if (column.empty()) return;
-
-    uint64_t size =column.size();
-    for (uint64_t i = 1; i < size; i++) {
-        column.at(i) += base;
+static vector<uint64_t> deltaEncoding(const vector<int64_t> &column, int64_t base) {
+    vector<uint64_t> out;
+    out.reserve(column.size());
+    for (size_t i = 0; i < column.size(); ++i) {
+        int64_t diff = column[i] - base;
+        out.push_back(static_cast<uint64_t>(diff));
     }
+    return out;
 }
 
-vector<uint64_t> deltaEncoding(const vector<uint64_t>& column, uint64_t base) {
-    if (column.empty()) return {};
-
-    vector<uint64_t> out = column;
-    for (size_t i = 1; i < out.size(); ++i) {
-        out[i] -= base;
+static vector<int64_t> deltaDecoding(const vector<uint64_t> &diffs, int64_t base) {
+    vector<int64_t> out;
+    out.reserve(diffs.size());
+    for (size_t i = 0; i < diffs.size(); ++i) {
+        out.push_back(static_cast<int64_t>(diffs[i]) + base);
     }
     return out;
 }
@@ -78,48 +76,45 @@ EncodeIntColumn compressIntColumn(IntColumn& column) {
 IntColumn decodeSingleIntColumn(EncodeIntColumn& column) {
     IntColumn out;
     out.name = column.name;
-    variableLengthDecoding(column.compressed_data, out.column);
-    deltaDecoding(out.column, column.delta_base);
+    vector<uint64_t> diffs;
+    variableLengthDecoding(column.compressed_data, diffs);
+    out.column = deltaDecoding(diffs, column.delta_base);
     return out;
 }
 
-pair<uint64_t, IntColumn> decodeIntColumn(ifstream& in) {
+pair<uint64_t, IntColumn> decodeIntColumn(ifstream &in) {
     EncodeIntColumn column;
-    uint64_t prev_ptr;
-    in.read((char*)(&prev_ptr), sizeof(prev_ptr));
+    uint64_t prev_ptr = 0;
+    in.read((char *)(&prev_ptr), sizeof(prev_ptr));
 
-    string name;
-    uint32_t name_len;
-    uint32_t compressed_bits_length;
-    uint64_t delta_base;
-
+    uint32_t name_len = 0;
     in.read((char *)(&name_len), sizeof(name_len));
-    name.resize(name_len);
+    column.name.resize(name_len);
     if (name_len > 0) {
-        in.read(&name[0], name_len);
+        in.read(&column.name[0], name_len);
     }
-    column.name = move(name);
 
-    in.read((char*)(&delta_base), sizeof(delta_base));
-    column.delta_base = delta_base;
+    in.read((char *)(&column.delta_base), sizeof(column.delta_base));
 
-    in.read((char*)(&compressed_bits_length), sizeof(compressed_bits_length));
+    uint32_t compressed_bits_length = 0;
+    in.read((char *)(&compressed_bits_length), sizeof(compressed_bits_length));
     column.compressed_data.resize(static_cast<size_t>(compressed_bits_length));
     if (compressed_bits_length > 0) {
-        in.read((char*)(column.compressed_data.data()), compressed_bits_length);
+        in.read((char *)(column.compressed_data.data()), compressed_bits_length);
     }
-    IntColumn out = move(decodeSingleIntColumn(column));
+
+    IntColumn out = decodeSingleIntColumn(column);
     return {prev_ptr, move(out)};
 }
 
 uint64_t encodeSingleIntColumn(ofstream& out, IntColumn& column){
     EncodeIntColumn col = compressIntColumn(column);
-    uint32_t len = col.name.size();
-    uint32_t compressed_bits_length = col.compressed_data.size();
-    uint64_t delta_base = col.delta_base;
+    uint32_t len = static_cast<uint32_t>(col.name.size());
+    uint32_t compressed_bits_length = static_cast<uint32_t>(col.compressed_data.size());
+    int64_t delta_base = col.delta_base;
 
     out.write((char*)&len, sizeof(len));
-    out.write((char*)col.name.data(), len);
+    out.write(col.name.data(), len);
 
     out.write((char*)&delta_base, sizeof(delta_base));
 
@@ -136,7 +131,6 @@ uint64_t encodeSingleIntColumn(ofstream& out, IntColumn& column){
     total += static_cast<uint64_t>(compressed_bits_length);
     return total;
 }
-
 
 void decodeIntColumns(ifstream& in, vector<IntColumn>& columns, uint32_t length) {
     for (uint32_t j = 0; j < length; j++) {

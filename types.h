@@ -18,7 +18,7 @@ using namespace std;
 using ColumnInfo = pair<uint64_t, uint8_t>;
 struct IntColumn {
     string name;
-    vector<uint64_t> column;
+    vector<int64_t> column;
 };
 
 struct StringColumn {

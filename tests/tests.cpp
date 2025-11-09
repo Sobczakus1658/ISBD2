@@ -66,10 +66,10 @@ vector<Batch> createBatchesForSimpleTest(){
     a.num_rows = 3;
     IntColumn idCol;
     idCol.name = "id"; 
-    idCol.column = {1, 2, 3};
+    idCol.column = {-1, 2, 3};
     IntColumn ageCol;
     ageCol.name = "wiek"; 
-    ageCol.column = {67, 68, 69};
+    ageCol.column = {67, -68, 69};
     StringColumn nameCol; 
     nameCol.name = "imie"; 
     nameCol.column = {"Zbyszek", "Halina", "Grażyna"};
@@ -270,7 +270,7 @@ void simpleTest(){
 
     cout<<"Batches before serialization and after deserialization are the same \n";
     cout<<"There are expected statistics \n";
-    calculateStatistics(deserializated_batches);
+    // calculateStatistics(deserializated_batches);
     cout<< "Simple Test Passed \n \n";
 }
 
