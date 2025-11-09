@@ -270,7 +270,7 @@ void simpleTest(){
 
     cout<<"Batches before serialization and after deserialization are the same \n";
     cout<<"There are expected statistics \n";
-    // calculateStatistics(deserializated_batches);
+    calculateStatistics(deserializated_batches);
     cout<< "Simple Test Passed \n \n";
 }
 

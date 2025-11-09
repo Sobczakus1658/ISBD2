@@ -6,7 +6,6 @@ struct EncodeStringColumn {
     vector<uint8_t> compressed_data;
     uint32_t uncompressed_size;  
     uint32_t compressed_size;
-    uint64_t offset;
 };
 
 StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {

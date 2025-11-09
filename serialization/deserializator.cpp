@@ -89,16 +89,16 @@ const unordered_map<string, ColumnInfo> createMap(ifstream &in) {
                     bool ok = true;
                     for (uint32_t i = 0; i < n; ++i) {
                         uint16_t name_len = 0;
-                        if (!in.read((char*)(&name_len), sizeof(name_len))) { ok = false; break; }
+                        in.read((char*)(&name_len), sizeof(name_len));
                         string name;
                         if (name_len > 0) {
                             name.resize(name_len);
-                            if (!in.read(&name[0], name_len)) { ok = false; break; }
+                            in.read(&name[0], name_len);
                         }
                         uint8_t kind = 0;
-                        if (!in.read((char*)(&kind), sizeof(kind))) { ok = false; break; }
+                        in.read((char*)(&kind), sizeof(kind));
                         uint64_t offset = 0;
-                        if (!in.read((char*)(&offset), sizeof(offset))) { ok = false; break; }
+                        in.read((char*)(&offset), sizeof(offset));
                         map.emplace(move(name), ColumnInfo{offset, kind});
                     }
                     if (ok) {
@@ -119,23 +119,16 @@ const unordered_map<string, ColumnInfo> createMap(ifstream &in) {
         cur -= static_cast<streamoff>(sizeof(uint64_t));
         in.seekg(cur, ios::beg);
         uint64_t offset = 0;
-        if (!in.read(reinterpret_cast<char*>(&offset), sizeof(offset))) {
-            break;
-        }
-
+        in.read((char*)(&offset), sizeof(offset));
         cur -= static_cast<streamoff>(sizeof(uint8_t));
         in.seekg(cur, ios::beg);
         uint8_t kind = 0;
-        if (!in.read(reinterpret_cast<char*>(&kind), sizeof(kind))) {
-            break;
-        }
+        in.read((char*)(&kind), sizeof(kind));
 
         cur -= static_cast<streamoff>(sizeof(uint16_t));
         in.seekg(cur, ios::beg);
         uint16_t name_len = 0;
-        if (!in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len))) {
-            break;
-        }
+        in.read((char*)(&name_len), sizeof(name_len));
 
         if (cur < static_cast<streamoff>(name_len)) {
             break;
@@ -145,9 +138,7 @@ const unordered_map<string, ColumnInfo> createMap(ifstream &in) {
         string name;
         if (name_len > 0) {
             name.resize(name_len);
-            if (!in.read(&name[0], name_len)) {
-                break;
-            }
+            in.read(&name[0], name_len); 
         }
 
         map.emplace(move(name), ColumnInfo{offset, kind});
