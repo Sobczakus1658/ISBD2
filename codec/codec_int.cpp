@@ -60,7 +60,7 @@ vector<uint64_t> deltaEncoding(const vector<uint64_t>& column, uint64_t base) {
     return out;
 }
 
-EncodeIntColumn encodeSingleIntColumn(IntColumn& column) {
+EncodeIntColumn compressIntColumn(IntColumn& column) {
     EncodeIntColumn out;
     out.name = column.name;
     if (column.column.empty()) {
@@ -83,66 +83,37 @@ IntColumn decodeSingleIntColumn(EncodeIntColumn& column) {
     return out;
 }
 
-void decodeIntColumn(ifstream& in, vector<IntColumn>& columns) {
+pair<uint64_t, IntColumn> decodeIntColumn(ifstream& in) {
     EncodeIntColumn column;
-    uint64_t prev_ptr = 0;
-    in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
+    uint64_t prev_ptr;
+    in.read((char*)(&prev_ptr), sizeof(prev_ptr));
 
     string name;
     uint32_t name_len;
     uint32_t compressed_bits_length;
     uint64_t delta_base;
 
-    in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len));
+    in.read((char *)(&name_len), sizeof(name_len));
     name.resize(name_len);
     if (name_len > 0) {
         in.read(&name[0], name_len);
     }
     column.name = move(name);
 
-    in.read(reinterpret_cast<char*>(&delta_base), sizeof(delta_base));
+    in.read((char*)(&delta_base), sizeof(delta_base));
     column.delta_base = delta_base;
 
-    in.read(reinterpret_cast<char*>(&compressed_bits_length), sizeof(compressed_bits_length));
+    in.read((char*)(&compressed_bits_length), sizeof(compressed_bits_length));
     column.compressed_data.resize(static_cast<size_t>(compressed_bits_length));
     if (compressed_bits_length > 0) {
-        in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_bits_length);
+        in.read((char*)(column.compressed_data.data()), compressed_bits_length);
     }
-    columns.push_back(move(decodeSingleIntColumn(column)));
-}
-
-pair<uint64_t, IntColumn> decodeIntColumnBlock(ifstream& in) {
-    EncodeIntColumn column;
-    uint64_t prev_ptr = 0;
-    in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
-
-    string name;
-    uint32_t name_len;
-    uint32_t compressed_bits_length;
-    uint64_t delta_base;
-
-    in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len));
-    name.resize(name_len);
-    if (name_len > 0) {
-        in.read(&name[0], name_len);
-    }
-    column.name = move(name);
-
-    in.read(reinterpret_cast<char*>(&delta_base), sizeof(delta_base));
-    column.delta_base = delta_base;
-
-    in.read(reinterpret_cast<char*>(&compressed_bits_length), sizeof(compressed_bits_length));
-    column.compressed_data.resize(static_cast<size_t>(compressed_bits_length));
-    if (compressed_bits_length > 0) {
-        in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_bits_length);
-    }
-
     IntColumn out = move(decodeSingleIntColumn(column));
     return {prev_ptr, move(out)};
 }
 
 uint64_t encodeSingleIntColumn(ofstream& out, IntColumn& column){
-    EncodeIntColumn col = encodeSingleIntColumn(column);
+    EncodeIntColumn col = compressIntColumn(column);
     uint32_t len = col.name.size();
     uint32_t compressed_bits_length = col.compressed_data.size();
     uint64_t delta_base = col.delta_base;
@@ -169,6 +140,6 @@ uint64_t encodeSingleIntColumn(ofstream& out, IntColumn& column){
 
 void decodeIntColumns(ifstream& in, vector<IntColumn>& columns, uint32_t length) {
     for (uint32_t j = 0; j < length; j++) {
-        decodeIntColumn(in, columns);
+        columns.push_back(decodeIntColumn(in).second);
     }
 }

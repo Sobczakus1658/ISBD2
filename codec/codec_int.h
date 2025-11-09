@@ -11,4 +11,4 @@ uint64_t encodeSingleIntColumn(ofstream& out, IntColumn& column);
 
 void decodeIntColumns(ifstream& in, vector<IntColumn>& columns, uint32_t length); 
 
-pair<uint64_t, IntColumn> decodeIntColumnBlock(ifstream& in);
+pair<uint64_t, IntColumn> decodeIntColumn(ifstream& in);

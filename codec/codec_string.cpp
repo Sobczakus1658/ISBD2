@@ -32,63 +32,33 @@ StringColumn decodeSingleStringColumn(EncodeStringColumn& column) {
     return out;
 }
 
-StringColumn decodeStringColumn(ifstream& in) {
+pair<uint64_t, StringColumn> decodeStringColumn(ifstream& in) {
     EncodeStringColumn column;
     uint64_t prev_ptr = 0;
-    in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
+    in.read((char *)(&prev_ptr), sizeof(prev_ptr));
 
     string name;
     uint32_t name_len;
     uint32_t uncompressed_size;
     uint32_t compressed_size;
 
-    in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len));
+    in.read((char *)(&name_len), sizeof(name_len));
     name.resize(name_len);
     if (name_len > 0) {
         in.read(&name[0], name_len);
     }
     column.name = move(name);
 
-    in.read(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
-    in.read(reinterpret_cast<char*>(&compressed_size), sizeof(compressed_size));
+    in.read((char *)(&uncompressed_size), sizeof(uncompressed_size));
+    in.read((char *)(&compressed_size), sizeof(compressed_size));
     column.uncompressed_size = uncompressed_size;
     column.compressed_size = compressed_size;
     column.compressed_data.resize(static_cast<size_t>(compressed_size));
     if (compressed_size > 0) {
-        in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_size);
+        in.read((char *)(column.compressed_data.data()), compressed_size);
     }
 
-    return decodeSingleStringColumn(column);
-}
-
-pair<uint64_t, StringColumn> decodeStringColumnBlock(ifstream& in) {
-    EncodeStringColumn column;
-    uint64_t prev_ptr = 0;
-    in.read(reinterpret_cast<char*>(&prev_ptr), sizeof(prev_ptr));
-
-    string name;
-    uint32_t name_len;
-    uint32_t uncompressed_size;
-    uint32_t compressed_size;
-
-    in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len));
-    name.resize(name_len);
-    if (name_len > 0) {
-        in.read(&name[0], name_len);
-    }
-    column.name = move(name);
-
-    in.read(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
-    in.read(reinterpret_cast<char*>(&compressed_size), sizeof(compressed_size));
-    column.uncompressed_size = uncompressed_size;
-    column.compressed_size = compressed_size;
-    column.compressed_data.resize(static_cast<size_t>(compressed_size));
-    if (compressed_size > 0) {
-        in.read(reinterpret_cast<char*>(column.compressed_data.data()), compressed_size);
-    }
-
-    StringColumn out = decodeSingleStringColumn(column);
-    return {prev_ptr, move(out)};
+    return {prev_ptr, decodeSingleStringColumn(column)};
 }
 
 EncodeStringColumn* compressStringColumn(StringColumn& column) {
@@ -140,14 +110,14 @@ uint64_t encodeSingleStringColumn(ofstream& out, StringColumn& column){
     uint32_t uncompressed_size = (*col).uncompressed_size;
     uint32_t compressed_size = (*col).compressed_size;
 
-    out.write(reinterpret_cast<char*>(&len), sizeof(len));
+    out.write((char *)(&len), sizeof(len));
     if (len > 0) out.write((*col).name.data(), len);
 
-    out.write(reinterpret_cast<char*>(&uncompressed_size), sizeof(uncompressed_size));
-    out.write(reinterpret_cast<char*>(&compressed_size) , sizeof(compressed_size));
+    out.write((char *)(&uncompressed_size), sizeof(uncompressed_size));
+    out.write((char *)(&compressed_size) , sizeof(compressed_size));
 
     if (compressed_size > 0) {
-        out.write(reinterpret_cast<char*>((*col).compressed_data.data()), compressed_size);
+        out.write((char *)((*col).compressed_data.data()), compressed_size);
     }
 
     uint64_t total = 0;
@@ -163,12 +133,6 @@ uint64_t encodeSingleStringColumn(ofstream& out, StringColumn& column){
 
 void decodeStringColumns(ifstream& in, vector<StringColumn>& columns, uint32_t length) {
     for (uint32_t j = 0; j < length; j++) {
-        columns.push_back(move(decodeStringColumn(in)));
+        columns.push_back(move(decodeStringColumn(in).second));
     }
 }
-
-// void encodeStringColumns(ofstream& out, vector<StringColumn>& columns) {
-//     for (auto &column : columns) {
-//         encodeStringColumn(out, column);
-//     }
-// }

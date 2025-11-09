@@ -7,6 +7,7 @@
 #include <cstddef>
 
 inline constexpr size_t BATCH_SIZE = 8192;
+inline constexpr int compresion_level = 3;
 inline constexpr uint32_t file_magic = 0x21374201;
 inline constexpr uint32_t batch_magic = 0x69696969;
 static constexpr uint8_t INTEGER = 0;
@@ -15,7 +16,6 @@ static constexpr uint8_t STRING  = 1;
 using namespace std;
 
 using ColumnInfo = pair<uint64_t, uint8_t>;
-
 struct IntColumn {
     string name;
     vector<uint64_t> column;

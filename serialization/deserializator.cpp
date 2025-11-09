@@ -10,16 +10,18 @@ Batch deserializatorBatch(ifstream& in, const string& filepath) {
     uint32_t batch_num_rows;
     uint32_t int_len;
     uint32_t string_len;
-    in.read(reinterpret_cast<char*>(&read_batch_magic), sizeof(read_batch_magic));
-    if (!in) return Batch();
+
+    in.read((char*)(&read_batch_magic), sizeof(read_batch_magic));
+
     if(read_batch_magic != batch_magic){
         cerr << "Invalid batch_magic";
         return Batch();
     }
-    in.read(reinterpret_cast<char*>(&batch_num_rows), sizeof(batch_num_rows));
-    in.read(reinterpret_cast<char*>(&int_len), sizeof(int_len));
-    in.read(reinterpret_cast<char*>(&string_len), sizeof(string_len));
 
+    in.read((char*)(&batch_num_rows), sizeof(batch_num_rows));
+    in.read((char*)(&int_len), sizeof(int_len));
+    in.read((char*)(&string_len), sizeof(string_len));
+ 
     Batch batch;
     batch.num_rows = batch_num_rows;
     decodeIntColumns(in, batch.intColumns, int_len);
@@ -42,20 +44,21 @@ vector<Batch> deserializator(const string& filepath) {
     }
     while (true) {
         uint32_t token;
-        if (!in.read(reinterpret_cast<char*>(&token), sizeof(token))) break;
+        if (!in.read((char*)(&token), sizeof(token))) break;
         if (token == batch_magic) {
             uint32_t batch_num_rows = 0;
             uint32_t int_len = 0;
             uint32_t string_len = 0;
-            if (!in.read(reinterpret_cast<char*>(&batch_num_rows), sizeof(batch_num_rows))) break;
-            if (!in.read(reinterpret_cast<char*>(&int_len), sizeof(int_len))) break;
-            if (!in.read(reinterpret_cast<char*>(&string_len), sizeof(string_len))) break;
+
+            in.read((char*)(&batch_num_rows), sizeof(batch_num_rows));
+            in.read((char*)(&int_len), sizeof(int_len));
+            in.read((char*)(&string_len), sizeof(string_len));
 
             Batch b;
             b.num_rows = batch_num_rows;
             decodeIntColumns(in, b.intColumns, int_len);
             decodeStringColumns(in, b.stringColumns, string_len);
-            if (b.intColumns.empty() && b.stringColumns.empty() && b.num_rows == 0) break;
+
             batches.push_back(move(b));
         } else {
             break;
@@ -66,35 +69,36 @@ vector<Batch> deserializator(const string& filepath) {
 
 const unordered_map<string, ColumnInfo> createMap(ifstream &in) {
     unordered_map<string, ColumnInfo> map;
-    if (!in) return map;
+
     in.clear();
     in.seekg(0, ios::end);
     streamoff file_size = in.tellg();
+
     const streamoff min_entry_footer = static_cast<streamoff>(sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint16_t));
     if (file_size < min_entry_footer) return map;
 
     if (file_size >= static_cast<streamoff>(sizeof(uint32_t) + sizeof(uint64_t))) {
         uint64_t index_start = 0;
         in.seekg(file_size - static_cast<streamoff>(sizeof(uint64_t)), ios::beg);
-        if (in.read(reinterpret_cast<char*>(&index_start), sizeof(index_start))) {
+        if (in.read((char*)(&index_start), sizeof(index_start))) {
             uint32_t n = 0;
             in.seekg(file_size - static_cast<streamoff>(sizeof(uint64_t) + sizeof(uint32_t)), ios::beg);
-            if (in.read(reinterpret_cast<char*>(&n), sizeof(n))) {
+            if (in.read((char*)(&n), sizeof(n))) {
                 if (index_start <= static_cast<uint64_t>(file_size) && index_start + static_cast<uint64_t>(min_entry_footer) <= static_cast<uint64_t>(file_size) - (sizeof(uint64_t) + sizeof(uint32_t))) {
                     in.seekg(static_cast<streamoff>(index_start), ios::beg);
                     bool ok = true;
                     for (uint32_t i = 0; i < n; ++i) {
                         uint16_t name_len = 0;
-                        if (!in.read(reinterpret_cast<char*>(&name_len), sizeof(name_len))) { ok = false; break; }
+                        if (!in.read((char*)(&name_len), sizeof(name_len))) { ok = false; break; }
                         string name;
                         if (name_len > 0) {
                             name.resize(name_len);
                             if (!in.read(&name[0], name_len)) { ok = false; break; }
                         }
                         uint8_t kind = 0;
-                        if (!in.read(reinterpret_cast<char*>(&kind), sizeof(kind))) { ok = false; break; }
+                        if (!in.read((char*)(&kind), sizeof(kind))) { ok = false; break; }
                         uint64_t offset = 0;
-                        if (!in.read(reinterpret_cast<char*>(&offset), sizeof(offset))) { ok = false; break; }
+                        if (!in.read((char*)(&offset), sizeof(offset))) { ok = false; break; }
                         map.emplace(move(name), ColumnInfo{offset, kind});
                     }
                     if (ok) {
@@ -201,13 +205,9 @@ vector<Batch> readColumn(const string& filepath, string column){
     while (cur_offset != 0) {
         in.clear();
         in.seekg(static_cast<streamoff>(cur_offset), ios::beg);
-        if (!in) {
-            cerr << "readColumn: seek to offset " << cur_offset << " failed (RC09)\n";
-            break;
-        }
 
         if (col_kind == INTEGER) {
-            auto p = decodeIntColumnBlock(in);
+            auto p = decodeIntColumn(in);
             uint64_t prev = p.first;
             IntColumn col = move(p.second);
             Batch b;
@@ -216,7 +216,7 @@ vector<Batch> readColumn(const string& filepath, string column){
             batches.push_back(move(b));
             cur_offset = prev;
         } else if (col_kind == STRING) {
-            auto p = decodeStringColumnBlock(in);
+            auto p = decodeStringColumn(in);
             uint64_t prev = p.first;
             StringColumn col = move(p.second);
             Batch b;
