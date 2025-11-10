@@ -27,6 +27,6 @@ zstd/lib/libzstd.a:
 
 clean:
 	rm -f $(OBJ) $(TARGET)
-      cd zstd && $(MAKE) clean
+	cd zstd && $(MAKE) clean
 
 .PHONY: all clean
