@@ -14,10 +14,13 @@ SRC = main.cpp \
 
 OBJ = $(SRC:.cpp=.o)
 
-all: zstd/lib/libzstd.a $(TARGET)
+all: batches zstd/lib/libzstd.a $(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+batches:
+	mkdir -p batches
 
 zstd/lib/libzstd.a:
 	cd zstd && $(MAKE)
