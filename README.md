@@ -6,7 +6,7 @@ Aby poprawnie uruchomić projekt, należy pobrać repozytorium wraz z jego podmo
 Następnie należy wykonać:  
 `make`  
 `./main`  
-Komenda `./main` uruchomi testy.
+Polecenie `make` może zająć trochę czasu, ponieważ kompiluje również pliki z dołączonego repozytorium `zstd`. Komenda `./main` uruchomi testy.
 
 # Opis działania programu 
 
