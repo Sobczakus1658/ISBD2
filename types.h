@@ -16,6 +16,7 @@ static constexpr uint8_t STRING  = 1;
 using namespace std;
 
 using ColumnInfo = pair<uint64_t, uint8_t>;
+
 struct IntColumn {
     string name;
     vector<int64_t> column;

@@ -10,11 +10,11 @@ Komenda `./main` uruchomi testy.
 
 # Opis działania programu 
 
-Zakładam, że na wejściu dostanę wektor Batchy, zapewnie to sobie pisząc kolejny część programu. Batch ma następującą strukturę:
+Zakładam, że na wejściu dostanę wektor Batchy, zapewnie to sobie pisząc kolejną część programu. Batch ma następującą strukturę:
 
 <pre> struct Batch {
-    vector<IntColumn> intColumns;
-    vector<StringColumn> stringColumns;
+    vector < IntColumn > intColumns;
+    vector < StringColumn > stringColumns;
     size_t num_rows;
 }; </pre>
 
@@ -26,20 +26,20 @@ Kolumny liczbowe (`IntColumn`) są przekształcane do postaci:
 
 <pre>struct EncodeIntColumn {
     string name;
-    vector<uint8_t> compressed_data;
+    vector < uint8_t > compressed_data;
     int64_t delta_base;
 };</pre>
 gdzie `delta_base` to najmniejsza wartość w kolumnie w ramach jednego batchu.
 Proces kompresji przebiega w dwóch etapach:
-1. **Delta int encoding** - od każdej wartości odejmowana jest wartość `delta_base`, dzięki czemu powstaje wektor liczb dodatnich.
-2. **Variable length int encoding** - powstałe dane są dodatkowo kompresowane zmienną długością bajtów
+1. **Delta int encoding** - od każdej wartości w kolumnie odejmowana jest wartość `delta_base`, dzięki czemu powstaje wektor dodatnich liczb.
+2. **Variable length int encoding** - powstałe dane są dodatkowo kompresowane zmienną długością bajtów.
 
 ## Kompresja kolumn tekstowych
 Kolumny tekstowe są przekształcane do następującej struktury: 
 
 <pre>struct EncodeStringColumn {
     string name;
-    vector<uint8_t> compressed_data;
+    vector < uint8_t > compressed_data;
     uint32_t uncompressed_size;  
     uint32_t compressed_size;
 };</pre>
@@ -67,29 +67,30 @@ Poniżej został przedstawiony graficzny sposob zapisu:
 
 Rozpiszmy teraz proces postępowania:
 1. Zapisz `batch_magic`, liczbę wierszy oraz liczbę kolumn liczbowych i tekstowych.
-2. Dla każdej kolumny zapisz offset wskazujący, gdzie w poprzednim batchu zaczyna się ta kolumna, a następnie zapisz metadane kolumny (długość nazwy kolumny, wielkość skompresowanych danych itd) oraz skompresowane dane.
-3. Przy każdym zapisie kolumny aktualizowana jest mapa, w pierwszym batchu wszystkie offsety mają wartość 0.
-4. Gdy plik przekroczy limit rozmiaru `PART_LIMIT`, aktualny stan mapy zostaje zapisany na końcu pliku. Następnie modyfikujemy wartości mapy ustawiając wszędzie offsety równe 0 i zamykamy plik.
+2. Dla każdej kolumny zapisz offset wskazujący, gdzie w poprzednim batchu zaczyna się kolumna o tej samej nazwie, a następnie zapisz metadane kolumny (długość nazwy kolumny, wielkość skompresowanych danych itd) oraz skompresowane dane.
+3. Przy każdym zapisie kolumny zaktualizuj mapę, w pierwszym batchu wszystkie offsety mają wartość 0.
+4. Gdy plik przekroczy limit rozmiaru `PART_LIMIT`, aktualny stan mapy zapisz na końcu pliku. Następnie zmodyfikuj wartości mapy ustawiając wszędzie offsety równe 0 i zamknij plik.
 
 ### Algorytm efektywnego odczytu kolumny
 1) Otwórz plik.
 2) Przejdź na jego koniec i odczytaj zakodowaną mapę kolumn.
 3) Odczytaj offset odpowiadający nazwie kolumny.
-4) Przejdź do tego offsetu i odczytaj kolumnę
+4) Przejdź do tego offsetu i odczytaj dane z kolumny z batcha
 5) W metadanych kolumny zapisana jest jej długość, dzięki czemu wiadomo, ile bajtów należy odczytać
-6) Powtarzaj kroki 3-5, dopóki offset w metadanych nie wynosi 0.
+7) Odczytaj offset do kolumny o tej samej nazwie z poprzedniego batcha z metadanych kolumny
+6) Powtarzaj kroki 4-7, dopóki offset w metadanych nie będzie wynosił 0.
 
-Dzięki takiemu rozwiązaniu przeczytanie konkretnej kolumny z pliku będzie efektywne, bo nie wymaga przeczytania całego pliku. Podział danych na mniejsze pliki również sprzyja prędkości odczytu, bo pojedynczy plik zmieści się do pamięci RAM.
+Dzięki takiemu rozwiązaniu przeczytanie konkretnej kolumny z pliku będzie efektywne, bo nie wymaga przeczytania całej zawartości. Podział danych na mniejsze pliki również sprzyja prędkości odczytu, bo pojedynczy plik zmieści się do pamięci RAM.
 W przypadku wielu plików rozwiązanie te wspiera możliwość równoległego odczytu.
 
 # Organizacja plików
 ## Validation
-Udostępnia zestaw funkcji do sprawdzania poprawności danych, w tym sprawdzenia czy dwa batche zawierają te same informacje.
+Udostępnia zestaw funkcji do sprawdzania poprawności danych, w tym sprawdzenia czy dwa batche zawierają te same dane.
 
 ## Statistics
 Udostępnia zestaw funkcji umożliwiających obliczenie niezbędnych statystyk:
 - dla kolumny z danymi liczbowymi -  średnią wartość,
-- dla kolumny z napisami - częstotliwość wystąpienia każdej litery.
+- dla kolumny z napisami - częstotliwość wystąpienia każdego znaku ASCII.
 
 ## Seralization
 ### Deserializator

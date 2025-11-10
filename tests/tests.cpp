@@ -72,7 +72,7 @@ vector<Batch> createBatchesForSimpleTest(){
     ageCol.column = {67, -68, 69};
     StringColumn nameCol; 
     nameCol.name = "imie"; 
-    nameCol.column = {"Zbyszek", "Halina", "Grażyna"};
+    nameCol.column = {"Zbyszek", "Halina", "Grazyna"};
     a.intColumns.push_back(move(idCol));
     a.intColumns.push_back(move(ageCol));
     a.stringColumns.push_back(move(nameCol));
