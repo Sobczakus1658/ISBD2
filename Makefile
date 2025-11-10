@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++20 -g -I zstd/lib
+CXXFLAGS = -std=c++20 -g -I zstd/lib -I zstd/lib/common
 LDFLAGS = -L zstd/lib -lzstd
 TARGET = main
 
@@ -14,15 +14,19 @@ SRC = main.cpp \
 
 OBJ = $(SRC:.cpp=.o)
 
-all: $(TARGET)
+all: zstd/lib/libzstd.a $(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+zstd/lib/libzstd.a:
+	cd zstd && $(MAKE)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
 	rm -f $(OBJ) $(TARGET)
+      cd zstd && $(MAKE) clean
 
 .PHONY: all clean
