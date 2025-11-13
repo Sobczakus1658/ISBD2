@@ -124,3 +124,6 @@ Dla bardzo dużego `vector<Batches>` sprawdza, czy dane zostaną poprawnie zapis
 Analogiczny do `SimpleTest`, ale wykonywany na większych danych.
 
 Na końcu testów uruchamiana jest funkcja, usuwająca wszystkie pliki powstałe podczas testów.
+
+## Plik 
+W folderze `\example` znajduje się przykładowy plik, z którego będziemy deserializować dane.

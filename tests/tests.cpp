@@ -15,6 +15,31 @@ static constexpr uint64_t PART_LIMIT = 3500ULL * 1024ULL * 1024ULL;
 static constexpr uint64_t SHORTER_LIMIT = 3500ULL * 1024ULL;
 namespace fs = filesystem;
 static const string base =  fs::current_path() / "batches/";
+static const string base_example =  fs::current_path() / "example/";
+
+vector<Batch> simpleBatch(){
+    vector<Batch> batches;
+    Batch a;
+    a.num_rows = 3;
+    IntColumn idCol;
+    idCol.name = "id"; 
+    idCol.column = {1, -2, 3};
+    IntColumn ageCol;
+    ageCol.name = "wiek"; 
+    ageCol.column = {67, 68, -69};
+    StringColumn nameCol; 
+    nameCol.name = "imie"; 
+    nameCol.column = {"Zbyszek", "Halina", "Grazyna"};
+    StringColumn lastName; 
+    lastName.name = "nazwisko"; 
+    lastName.column = {"Lopez", "Sobonska", "Marynowska"};
+    a.intColumns.push_back(move(idCol));
+    a.intColumns.push_back(move(ageCol));
+    a.stringColumns.push_back(move(nameCol));
+    a.stringColumns.push_back(move(lastName));
+    batches.push_back(move(a));
+    return batches;
+}
 
 vector<Batch> createBatchesForColumnTest(){
     vector<Batch> batches;
@@ -160,6 +185,22 @@ vector<Batch> createBigSampleBatches(){
     }
 
     return batches;
+}
+
+void simpleBatchTest(){
+    cout<< "Running simple Batch test ... \n";
+    string folderPath = base_example + "simple";
+    string filePath = folderPath + ".part000";
+
+    vector<Batch> batches = move(simpleBatch());
+    serializator(batches, folderPath, PART_LIMIT);
+    vector<Batch> deserializated_batches = move(deserializator(filePath));
+    validateBatches(batches, deserializated_batches);
+
+    cout<<"Batches before serialization and after deserialization are the same \n";
+    cout<<"There are expected statistics \n";
+    calculateStatistics(deserializated_batches);
+    cout<< "Simple Batch Test Passed \n \n";
 }
 
 void columnTest(){
